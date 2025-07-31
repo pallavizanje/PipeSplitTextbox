@@ -1,41 +1,51 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 interface PipeSplitTextboxProps {
+  name: string;
   value: string;
-  onChange: (newValue: string) => void;
+  onChange: (e: React.ChangeEvent<any>) => void;
+  onBlur: (e: React.FocusEvent<any>) => void;
 }
 
-const PipeSplitTextbox: React.FC<PipeSplitTextboxProps> = ({ value, onChange }) => {
+const PipeSplitTextbox: React.FC<PipeSplitTextboxProps> = ({ name, value, onChange, onBlur }) => {
   const [hasPipe, setHasPipe] = useState(false);
   const [prefix, setPrefix] = useState("");
   const [editable, setEditable] = useState("");
 
   useEffect(() => {
     const pipeIndex = value.indexOf("|");
-
     if (pipeIndex !== -1) {
-      const beforePipe = value.slice(0, pipeIndex);
-      const afterPipe = value.slice(pipeIndex + 1);
       setHasPipe(true);
-      setPrefix(beforePipe);
-      setEditable(afterPipe);
+      setPrefix(value.slice(0, pipeIndex));
+      setEditable(value.slice(pipeIndex + 1));
     } else {
       setHasPipe(false);
-      setEditable(value);
       setPrefix("");
+      setEditable(value);
     }
   }, [value]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditableChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEditable = e.target.value;
+    const newValue = hasPipe ? `${prefix}|${newEditable}` : newEditable;
 
-    if (hasPipe) {
-      setEditable(newEditable);
-      onChange(`${prefix}|${newEditable}`);
-    } else {
-      setEditable(newEditable);
-      onChange(newEditable);
-    }
+    const syntheticEvent = {
+      target: {
+        name,
+        value: newValue,
+      },
+    } as React.ChangeEvent<any>;
+
+    onChange(syntheticEvent);
+  };
+
+  const handleEditableBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const syntheticEvent = {
+      target: {
+        name,
+      },
+    } as React.FocusEvent<any>;
+    onBlur(syntheticEvent);
   };
 
   return (
@@ -45,8 +55,10 @@ const PipeSplitTextbox: React.FC<PipeSplitTextboxProps> = ({ value, onChange }) 
       )}
       <input
         type="text"
+        name={name}
         value={editable}
-        onChange={handleChange}
+        onChange={handleEditableChange}
+        onBlur={handleEditableBlur}
         className="flex-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
